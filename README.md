@@ -303,7 +303,7 @@ export default defineConfig({
 
 ```typescript
 // Включим метаданные в App.tsx
-const metaphor = 'музыкальный стартап ищет инвестиции'
+const metaphor = 'идеи телефонного подкаста'
 
 // Подбор объектов
 const objs = matchMetaphor(metaphor, 5) // maxObjects=5
