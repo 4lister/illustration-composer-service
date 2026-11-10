@@ -295,7 +295,7 @@ export default defineConfig({
 
 ### Пример: Создать композицию по метафоре
 
-![1794328802376](image/README/1794328802376.png)
+![1794328802376](1794328802376.png)
 
 ```typescript
 // Включим метаданные в App.tsx
@@ -313,7 +313,7 @@ downloadSvg(buildExportSvg(items, format), 'investiture.svg')
 
 ### Пример: Создать композицию по именам
 
-![1794328438146](image/README/1794328438146.png)
+![1794328438146](1794328438146.png)
 
 ```typescript
 const names = 'книга, наушники, лампа'
