@@ -106,11 +106,11 @@ export const FORMATS: CanvasFormat[] = [
 ]
 
 export function assetPath(objectId: string, size: SizeId, variant: VariantId): string {
-  return `/library/${size}/${variant}/${objectId}.svg`
+  return `${import.meta.env.BASE_URL}library/${size}/${variant}/${objectId}.svg`
 }
 
 export function backgroundPath(size: SizeId, paletteId: string): string {
-  return `/library/backgrounds/${size}-${paletteId}.svg`
+  return `${import.meta.env.BASE_URL}library/backgrounds/${size}-${paletteId}.svg`
 }
 
 export function findObject(id: string): LibraryObject | undefined {
