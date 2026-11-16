@@ -14,10 +14,7 @@ export function useSvgAsset(
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!path) {
-      setSvg(null)
-      return
-    }
+    if (!path) return
 
     let cancelled = false
     const load = async () => {
@@ -45,6 +42,8 @@ export function useSvgAsset(
       cancelled = true
     }
   }, [path, paletteId, variant])
+
+  if (!path) return { svg: null, error: null }
 
   return { svg, error }
 }

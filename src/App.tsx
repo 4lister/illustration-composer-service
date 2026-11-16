@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Canvas } from './components/Canvas'
 import { Sidebar } from './components/Sidebar'
 import { FORMATS, findObject } from './data/library'
@@ -20,7 +20,12 @@ export default function App() {
   const [showBackground, setShowBackground] = useState(true)
   const [metaphor, setMetaphor] = useState('музыкальный стартап ищет инвестиции')
   const [names, setNames] = useState('книга, наушники, лампа')
-  const [items, setItems] = useState<CanvasItem[]>([])
+  const [items, setItems] = useState<CanvasItem[]>(() => {
+    const demoObjects = ['headphones', 'phone', 'coin', 'vase']
+      .map((id) => findObject(id))
+      .filter((o): o is LibraryObject => Boolean(o))
+    return composeObjects(demoObjects, FORMATS[0], { includeBackground: true })
+  })
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
 
   const format = useMemo(() => FORMATS.find((f) => f.id === formatId) ?? FORMATS[0], [formatId])
@@ -122,14 +127,6 @@ export default function App() {
       alert(e instanceof Error ? e.message : 'Ошибка экспорта')
     }
   }
-
-  // Initial demo composition
-  useEffect(() => {
-    const objs = ['headphones', 'phone', 'coin', 'vase']
-      .map((id) => findObject(id))
-      .filter((o): o is LibraryObject => Boolean(o))
-    setItems(composeObjects(objs, FORMATS[0], { includeBackground: true }))
-  }, [])
 
   return (
     <div className="app">

@@ -2,6 +2,8 @@
 
 Многослойный конструктор SVG-иллюстраций с поддержкой композиции объектов по метафоре или набору именованных графических элементов.
 
+**Рабочий сервис:** https://4lister.github.io/illustration-composer-service/ · **Репозиторий:** https://github.com/4lister/illustration-composer-service
+
 ---
 
 ## 🚀 Быстрый старт
@@ -54,48 +56,52 @@ illustration-constructor/
 ├── README.md                 # Документация (этот файл)
 ├── src/
 │   ├── main.tsx              # Точка входа приложения — компонент App с состоянием
-│   ├── App.css               # Стили для основного контента
+│   ├── App.tsx               # Корневой компонент: состояние и сценарии сборки
 │   ├── index.css             # Глобальные переменные, сброс, базовые стили
 │   │
-│   ├── components/           # React-компоненты (Canvas, Sidebar, etc.)
-│   │   ├── Canvas.tsx        # Хранит состояние и рендеринг сцены
-│   │   └── ...               # Дополнительные компоненты
+│   ├── components/           # React-компоненты
+│   │   ├── Canvas.tsx        # Холст: рендеринг сцены, drag&drop, зум
+│   │   ├── Sidebar.tsx       # Панель управления (размер, палитра, формат, сценарии)
+│   │   └── SvgObject.tsx     # Отдельный SVG-объект с перекраской
 │   │
-│   ├── data/library.ts       # Конфигурация объектов SVG-библиотеки
-│   │   ├── FORMATS           # Наборы размеров для экспорта
-│   │   ├── OBJECTS           # Описание объектов из библиотеки
-│   │   └── ...               # Дополнительные данные
+│   ├── data/
+│   │   ├── library.ts        # Конфигурация библиотеки (LIBRARY, FORMATS)
+│   │   └── palettes.ts       # Цветовые палитры и карта перекраски исходных цветов
 │   │
 │   ├── lib/                  # Локальные утилиты (без внешних API)
 │   │   ├── compose.ts        # Методики композиции объектов в одну картинку
 │   │   ├── exportSvg.ts      # Генерация SVG и скачивание файла
-│   │   └── matchMetaphor.ts  # Алгоритмы подбора объектов по метафоре или именам
+│   │   ├── matchMetaphor.ts  # Алгоритмы подбора объектов по метафоре или именам
+│   │   └── recolor.ts        # Перекраска SVG под выбранную палитру
 │   │
-│   └── types.ts              # Типы данных проекта
+│   ├── hooks/useSvgAsset.ts  # Загрузка и кеширование SVG-ассетов
+│   └── types/index.ts        # Типы данных проекта
 ├── public/
 │   └── library/             # SVG-активы из библиотеки графических примитивов
-│       ├── objects/          # Основные объекты (с ролью и размером)
+│       ├── L/ и S/           # Объекты по размерам: main/ — главные, bg/ — фоновые
 │       ├── backgrounds/      # Фон под палитры
-│       └── ...               # Дополнительные ресурсы
+│       ├── palettes/         # Палитры
+│       └── examples/         # Примеры собранных композиций
 └── ...                      # Node модули
 ```
 
 ### Ключевые характеристики архитектуры
 
 - __Модульность__: SVG-библиотека (`public/library/`) и бизнес-логика (`src/lib/`) отделены. Легко добавлять новые объекты, подходы к композиции или методы экспорта без изменения друг друга.
-- __Типоизирование__: TypeScript используется с целью строгости типов. Все интерфейсы описаны в `types.ts`.
+- __Типоизирование__: TypeScript используется с целью строгости типов. Все интерфейсы описаны в `src/types/index.ts`.
 - __Локальность__: Нет внешних API вызовов — вся логика подбора объектов по метафоре находится локально. Проект работает офлайн после загрузки.
-- __Универсальность__: Поддержка экспорта в различных размерах (`square`, `vertical`, `wide`), цветовых гаммах (`purple`, `orange`, `teal`) и с фоном/без фона.
+- __Универсальность__: Поддержка экспорта в различных размерах (`square`, `wide`, `tall`), цветовых гаммах (`purple`, `orange`, `teal`) и с фоном/без фона.
+- __Расширяемость__: Новые объекты добавляются как SVG-файлы в `public/library/{L,S}/{main,bg}/` + запись в `LIBRARY`; новые палитры — в `PALETTES`. Код при этом не меняется.
 
 ---
 
 ## 🔧 Установка зависимостей
 
 ```bash
-npm install react@^18 vite typescript @vitejs/plugin-react tailwindcss
+npm install
 ```
 
-> Примечание: В текущем проекте используется нативная сборка Vite с настраиваемой конфигурацией, без Tailwind. Подключенные зависимости указаны в `package.json`.
+> Примечание: используется нативная сборка Vite + React + TypeScript, без Tailwind и других UI-библиотек. Актуальные зависимости указаны в `package.json`.
 
 ---
 
@@ -136,20 +142,28 @@ const onComposeMetaphor = () => {
 
 Файл с конфигурацией SVG-объектов. Содержит:
 
-- __`FORMATS`__: Наборы размеров для экспорта (`square`, `vertical`, `wide`).
-- __`OBJECTS`__: Описания объектов из библиотеки (роль `main/bg` и размер `L/S`).
-- __`PALETTES`__: Наборы цветовых палитр.
+- __`FORMATS`__: Наборы размеров для экспорта (`square`, `wide`, `tall`).
+- __`LIBRARY`__: Описания объектов из библиотеки (имя, теги для подбора, пропорции).
+- __`PALETTES`__ (в `src/data/palettes.ts`): Наборы цветовых палитр и карта перекраски исходных цветов.
 
 ```typescript
-export const FORMATS: Array<{ id: FormatId; name: string }> = [...]
+export const FORMATS: CanvasFormat[] = [
+  { id: 'square', name: 'Квадрат', width: 1000, height: 1000 },
+  { id: 'wide', name: 'Широкий', width: 1200, height: 630 },
+  { id: 'tall', name: 'Высокий', width: 630, height: 1200 },
+]
 
-export const OBJECTS: Array<{
-  id: string;
-  role: 'main' | 'bg';
-  size: 'L' | 'S';
-}> = [...]
-
-export const PALETTES: Record<PaletteId, { main: string; accent: string; muted: string; text: string }>
+export const LIBRARY: LibraryObject[] = [
+  {
+    id: 'book',
+    name: 'Notebook',
+    nameRu: 'Книга',
+    tags: ['книга', 'блокнот', 'тетрадь', 'записи', 'учёба', ...],
+    width: 1446,
+    height: 977,
+  },
+  // ...
+]
 ```
 
 ### 4. Композиция — `src/lib/compose.ts`
@@ -193,21 +207,35 @@ export function matchNames(names: string): Array<LibraryObject>
 // ... implementation details
 ```
 
-### 7. Типы — `src/types.ts`
+### 7. Перекраска — `src/lib/recolor.ts`
+
+Перевод SVG-объекта из исходной (фиолетовой) палитры в выбранную цветовую схему:
+
+- __`recolorSvg`__: Заменяет цвета заливки/обводки по карте ролей `SOURCE_COLOR_ROLES` на цвета активной палитры.
+- __`injectSvgRootAttrs`__: Подготавливает корневой `<svg>` для встраивания в общую композицию.
+- __`stripXmlNsNoise`__: Убирает XML-декларацию и DOCTYPE при встраивании.
+
+```typescript
+export function recolorSvg(svgText: string, palette: Palette, mode: 'main' | 'bg' = 'main'): string
+export function injectSvgRootAttrs(svgText: string, attrs: Record<string, string>): string
+export function stripXmlNsNoise(svgText: string): string
+```
+
+### 8. Типы — `src/types/index.ts`
 
 Декларация типов данных:
 
-- __`CanvasItem`__: Компонент холста с абсолютными позициями.
-- __`FormatId`__: ID формата экспорта (`square`, `vertical`, `wide`).
-- __`LibraryObject`__: Описание объекта из библиотеки.
+- __`CanvasItem`__: Элемент холста с абсолютными позициями, масштабом, поворотом и z-индексом.
+- __`FormatId`__: ID формата экспорта (`square`, `wide`, `tall`).
+- __`LibraryObject`__: Описание объекта из библиотеки (id, имена, теги, пропорции).
 - __`PaletteId`__: ID цветовой палитры (`purple`, `orange`, `teal`).
 - __`SizeId`__: Размер объектов (`L`, `S`).
-- __`VariantId`__: Ветвление объектов (например, для вариантов размера).
+- __`VariantId`__: Вариант объекта: `main` (главный, цветной) или `bg` (фоновый, монохромный).
 
 ```typescript
-export type CanvasItem = { uid: string; x: number; y: number; ... }
-export type FormatId = 'square' | 'vertical' | 'wide'
-export type LibraryObject = { id: string; role: 'main' | 'bg'; size: 'L' | 'S'; ... }
+export type CanvasItem = { uid: string; objectId: string; variant: VariantId; x: number; y: number; ... }
+export type FormatId = 'square' | 'wide' | 'tall'
+export type LibraryObject = { id: string; name: string; nameRu: string; tags: string[]; ... }
 // ...
 ```
 
@@ -219,21 +247,16 @@ export type LibraryObject = { id: string; role: 'main' | 'bg'; size: 'L' | 'S'; 
 
 Конфигурация сборочного инструмента:
 
-- __Типы__: Включены для React JSX.
-- __Плагины__: Настройка препроцессинга SVG для корректного импортирования файлов из `public/library/`.
-- __Ассеты__: SVG файлы обрабатываются при сборке, превращаясь в импортируемые модули.
+- __Плагин__: `@vitejs/plugin-react` для JSX и Fast Refresh.
+- __Ассеты__: SVG-библиотека хранится в `public/library/` и загружается в рантайме через `fetch` (с кешированием в `useSvgAsset`), поэтому файлы остаются оригинальными и редактируемыми.
 
 ```typescript
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
 
+// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  resolve: {
-    alias: {
-      // Aliases for library files if needed
-    },
-  },
 })
 ```
 
@@ -305,10 +328,11 @@ const metaphor = 'идеи телефонного подкаста'
 const objs = matchMetaphor(metaphor, 5) // maxObjects=5
 
 // Композиция в выбранном формате
-const items = composeObjects(objs, formatId, { includeBackground: true })
+const items = composeObjects(objs, format, { includeBackground: true })
 
 // Скачивание готового SVG
-downloadSvg(buildExportSvg(items, format), 'investiture.svg')
+const svg = await buildExportSvg({ items, format, size, paletteId, background: true })
+downloadSvg(svg, 'investiture.svg')
 ```
 
 ### Пример: Создать композицию по именам
@@ -318,7 +342,7 @@ downloadSvg(buildExportSvg(items, format), 'investiture.svg')
 ```typescript
 const names = 'книга, наушники, лампа'
 const objs = matchNames(names) // Поиск объектов с данными именами
-const items = composeObjects(objs, formatId, { includeBackground: true })
+const items = composeObjects(objs, format, { includeBackground: true })
 ```
 
 ---
@@ -333,6 +357,18 @@ const items = composeObjects(objs, formatId, { includeBackground: true })
 
 ---
 
+## 🤖 AI-инструменты, использованные при разработке
+
+При разработке использовались AI-ассистенты:
+
+- **Cursor / Windsurf** — AI-редакторы кода: написание и рефакторинг модулей, работа с компонентами и типами.
+- **OpenCode** — автоматизация сценариев разработки, генерация и отладка кода.
+- **Cline + Qwen3.5** — AI-агент для доработки логики подбора объектов, перекраски и экспорта.
+
+> Логика сервиса (подбор объектов, композиция, перекраска, экспорт) — собственная и работает локально, без внешних API. AI-инструменты применялись только как помощники при разработке.
+
+---
+
 ## 🛠️ Развертывание
 
 Сборка проекта выполняется автоматически через Vite:
@@ -344,6 +380,12 @@ npm run build
 После сборки в директории `dist/` находятся:
 
 - __`index.html`__ — готовый HTML с подключенными стилями и скриптом.
-- __`/static/**`__ — обработанные SVG файлы, превращённые в модули (можно использовать как CSS импорты).
+- __`/library/**`__ — SVG-ассеты библиотеки (объекты, фоны, палитры, примеры).
 
-Развёртывание на любом сервере или хостинге статического контента (например, GitHub Pages, Netlify, Vercel).
+Проект — статическое одностраничное приложение, поэтому разворачивается на любом хостинге статического контента:
+
+- **GitHub Pages** — через Actions (`.github/workflows/deploy.yml`) или вручную из папки `dist/`.
+- **Netlify / Vercel** — команда сборки `npm run build`, директория публикации `dist`.
+- **Любой статический сервер** — `npm run preview` (Vite Preview) или `npx serve dist`.
+
+> При публикации в подпапку (например, GitHub Pages для репозитория) укажите `base: '/<имя-репозитория>/'` в `vite.config.ts`.
